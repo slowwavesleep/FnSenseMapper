@@ -1,4 +1,4 @@
-do_ranking: True
+do_ranking: False
 no_header: True
 substring_condition: True
 
