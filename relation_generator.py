@@ -142,7 +142,7 @@ class RelationGenerator:
                     relations.append(
                         {
                             f"{CANDIDATE_FIELD_NAMES['id_lu']}_1": this_id_lu,
-                            "relation": RELATION_NAME,
+                            RELATION_NAME: relation,
                             f"{CANDIDATE_FIELD_NAMES['id_lu']}_2": other_id_lu,
                         }
                     )
