@@ -10,6 +10,8 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
+from constants import DATA_COLUMNS, CANDIDATE_FIELD_NAMES
+
 
 class CandidateRanker:
 
@@ -53,14 +55,7 @@ class CandidateRanker:
     def init_data(self):
         if self.no_header:
             self.data = pd.read_csv(self.data_path, header=None)
-            self.data.columns = ["idLu",
-                                 "word",
-                                 "pos",
-                                 "fnDefinition",
-                                 "entryId",
-                                 "entryName",
-                                 "entrySource",
-                                 "bnDefinition"]
+            self.data.columns = DATA_COLUMNS
         else:
             self.data = pd.read_csv(self.data_path)
 
@@ -112,14 +107,14 @@ class CandidateRanker:
             mapped_ids = mapped_ids[substring_indices]
             mapped_names = mapped_names[substring_indices]
 
-        return {"bn_ids": list(mapped_ids),
-                "bn_names": list(mapped_names),
-                "bn_definitions": list(mapped_definitions),
-                "scores": [float(score) for score in scores],
-                "id_lu": int(id_lu),
-                "fn_word": fn_word,
-                "fn_definition": fn_definition,
-                "fn_pos": fn_pos}
+        return {CANDIDATE_FIELD_NAMES["bn_ids"]: list(mapped_ids),
+                CANDIDATE_FIELD_NAMES["bn_names"]: list(mapped_names),
+                CANDIDATE_FIELD_NAMES["bn_definitions"]: list(mapped_definitions),
+                CANDIDATE_FIELD_NAMES["scores"]: [float(score) for score in scores],
+                CANDIDATE_FIELD_NAMES["id_lu"]: int(id_lu),
+                CANDIDATE_FIELD_NAMES["fn_word"]: fn_word,
+                CANDIDATE_FIELD_NAMES["fn_definition"]: fn_definition,
+                CANDIDATE_FIELD_NAMES["fn_pos"]: fn_pos}
 
     def write_candidates(self):
         with open(self.out_path, "w") as file:

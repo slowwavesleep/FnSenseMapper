@@ -5,6 +5,9 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 
+from constants import DATA_COLUMNS, RELATION_ENTRIES_FIELD_NAMES, EDGES_FIELD_NAMES, CANDIDATE_FIELD_NAMES, \
+    ENTRY_ID_NAME
+
 
 class RelationGenerator:
 
@@ -50,25 +53,18 @@ class RelationGenerator:
     def init_entries(self):
         if self.no_header:
             self.entries = pd.read_csv(self.entries_path, header=None)
-            self.entries.columns = ["idLu",
-                                    "word",
-                                    "pos",
-                                    "fnDefinition",
-                                    "entryId",
-                                    "entryName",
-                                    "entrySource",
-                                    "bnDefinition"]
+            self.entries.columns = DATA_COLUMNS
         else:
             self.entries = pd.read_csv(self.entries_path)
 
         self.entries.bnDefinition = self.entries.bnDefinition.fillna("")
         self.entries.fnDefinition = self.entries.fnDefinition.fillna("")
-        self.entries = self.entries[["idLu", "word", "pos", "fnDefinition"]]
+        self.entries = self.entries[RELATION_ENTRIES_FIELD_NAMES]
 
     def init_edges(self):
         if self.no_header:
             self.edges = pd.read_csv(self.edges_path, header=None)
-            self.edges.columns = ["entryId", "edges_string"]
+            self.edges.columns = EDGES_FIELD_NAMES
         else:
             self.edges = pd.read_csv(self.edges_path)
         self.edges = self.edges.loc[~self.edges.edges_string.isna()]
@@ -78,13 +74,13 @@ class RelationGenerator:
         with open(self.candidates_path) as file:
             for line in file:
                 candidate = json.loads(line)
-                if candidate["bn_names"]:
+                if candidate[CANDIDATE_FIELD_NAMES["bn_names"]]:
                     self.candidates.append(candidate)
 
     def init_lu2bn(self):
         for candidate in self.candidates:
-            id_lu = candidate["id_lu"]
-            bn_ids = candidate["bn_ids"]
+            id_lu = candidate[CANDIDATE_FIELD_NAMES["id_lu"]]
+            bn_ids = candidate[CANDIDATE_FIELD_NAMES["bn_ids"]]
             for bn_id in bn_ids:
                 self.lu2bn[bn_id].append(id_lu)
 
@@ -104,7 +100,7 @@ class RelationGenerator:
         self.lu_edges = self.lu_edges.fn_candidates.apply(pd.Series). \
             merge(self.lu_edges, left_index=True, right_index=True). \
             drop(["fn_candidates", "edges_string", "edges"], axis=1). \
-            melt(id_vars=["entryId"], value_name="id_lu").drop(["variable"], axis=1)
+            melt(id_vars=[EDGES_FIELD_NAMES["entryId"]], value_name="id_lu").drop(["variable"], axis=1)
 
         self.lu_edges = self.lu_edges.loc[~self.lu_edges.id_lu.isna()]
         self.lu_edges.id_lu = self.lu_edges.id_lu.astype(int)
@@ -113,7 +109,7 @@ class RelationGenerator:
         if self.lu_edges is None:
             self.init_lu_edges()
 
-        self.lu_edges = self.lu_edges.merge(self.edges, on="entryId")[["entryId", "id_lu", "edges"]]
+        self.lu_edges = self.lu_edges.merge(self.edges, on=ENTRY_ID_NAME["entryId"])[[ENTRY_ID_NAME["entryId"], "id_lu", "edges"]]
         self.lu_edges.edges = self.lu_edges.edges.apply(self.map_edges)
 
     def generate_output(self):
