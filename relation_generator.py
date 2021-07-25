@@ -5,8 +5,14 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 
-from constants import DATA_COLUMNS, RELATION_ENTRIES_FIELD_NAMES, EDGES_FIELD_NAMES, CANDIDATE_FIELD_NAMES, \
-    ENTRY_ID_NAME, RELATION_NAME
+from constants import (
+    DATA_COLUMNS,
+    RELATION_ENTRIES_FIELD_NAMES,
+    EDGES_FIELD_NAMES,
+    CANDIDATE_FIELD_NAMES,
+    ENTRY_ID_NAME,
+    RELATION_NAME,
+)
 
 
 class RelationGenerator:
@@ -19,15 +25,17 @@ class RelationGenerator:
         "derivationally_related_form",
         "member_of_this_domain_-_topic",
         "member_of_this_domain_-_usage",
-        "domain_of_synset_-_usage"
+        "domain_of_synset_-_usage",
     ]
 
-    def __init__(self,
-                 edges_path: str,
-                 candidates_path: str,
-                 entries_path: str,
-                 out_path: str,
-                 no_header: bool):
+    def __init__(
+        self,
+        edges_path: str,
+        candidates_path: str,
+        entries_path: str,
+        out_path: str,
+        no_header: bool,
+    ):
 
         self.out_path = out_path
 
@@ -95,21 +103,33 @@ class RelationGenerator:
 
     def init_lu_edges(self):
         self.lu_edges = self.edges.copy()
-        self.lu_edges["fn_candidates"] = self.lu_edges.entryId.apply(lambda x: self.lu2bn[x])
+        self.lu_edges["fn_candidates"] = self.lu_edges.entryId.apply(
+            lambda x: self.lu2bn[x]
+        )
 
-        self.lu_edges = self.lu_edges.fn_candidates.apply(pd.Series). \
-            merge(self.lu_edges, left_index=True, right_index=True). \
-            drop(["fn_candidates", "edges_string", "edges"], axis=1). \
-            melt(id_vars=[ENTRY_ID_NAME["entryId"]], value_name=CANDIDATE_FIELD_NAMES["id_lu"]).drop(["variable"], axis=1)
+        self.lu_edges = (
+            self.lu_edges.fn_candidates.apply(pd.Series)
+            .merge(self.lu_edges, left_index=True, right_index=True)
+            .drop(["fn_candidates", "edges_string", "edges"], axis=1)
+            .melt(
+                id_vars=[ENTRY_ID_NAME["entryId"]],
+                value_name=CANDIDATE_FIELD_NAMES["id_lu"],
+            )
+            .drop(["variable"], axis=1)
+        )
 
         self.lu_edges = self.lu_edges.loc[~self.lu_edges.id_lu.isna()]
-        self.lu_edges[CANDIDATE_FIELD_NAMES["id_lu"]] = self.lu_edges[CANDIDATE_FIELD_NAMES["id_lu"]].astype(int)
+        self.lu_edges[CANDIDATE_FIELD_NAMES["id_lu"]] = self.lu_edges[
+            CANDIDATE_FIELD_NAMES["id_lu"]
+        ].astype(int)
 
     def get_relations(self):
         if self.lu_edges is None:
             self.init_lu_edges()
 
-        self.lu_edges = self.lu_edges.merge(self.edges, on=ENTRY_ID_NAME["entryId"])[[ENTRY_ID_NAME["entryId"], CANDIDATE_FIELD_NAMES["id_lu"], "edges"]]
+        self.lu_edges = self.lu_edges.merge(self.edges, on=ENTRY_ID_NAME["entryId"])[
+            [ENTRY_ID_NAME["entryId"], CANDIDATE_FIELD_NAMES["id_lu"], "edges"]
+        ]
         self.lu_edges.edges = self.lu_edges.edges.apply(self.map_edges)
 
     def generate_output(self):
@@ -119,11 +139,13 @@ class RelationGenerator:
             edges = row[1]["edges"]
             if edges:
                 for relation, other_id_lu in edges:
-                    relations.append({
-                        f"{CANDIDATE_FIELD_NAMES['id_lu']}_1": this_id_lu,
-                        "relation": RELATION_NAME,
-                        f"{CANDIDATE_FIELD_NAMES['id_lu']}_2": other_id_lu
-                    })
+                    relations.append(
+                        {
+                            f"{CANDIDATE_FIELD_NAMES['id_lu']}_1": this_id_lu,
+                            "relation": RELATION_NAME,
+                            f"{CANDIDATE_FIELD_NAMES['id_lu']}_2": other_id_lu,
+                        }
+                    )
 
         self.lu_relations = pd.DataFrame.from_records(relations).drop_duplicates()
 
@@ -131,9 +153,11 @@ class RelationGenerator:
         self.lu_relations = pd.concat(
             [
                 self.lu_relations,
-                self.swap_col_names(self.lu_relations,
-                                    col_name_1=f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
-                                    col_name_2=f"{CANDIDATE_FIELD_NAMES['id_lu']}_2")
+                self.swap_col_names(
+                    self.lu_relations,
+                    col_name_1=f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
+                    col_name_2=f"{CANDIDATE_FIELD_NAMES['id_lu']}_2",
+                ),
             ]
         ).drop_duplicates()
 
@@ -141,31 +165,39 @@ class RelationGenerator:
         if self.entries is None:
             self.init_entries()
 
-        self.lu_relations = self.lu_relations.merge(
-            self.entries[RELATION_ENTRIES_FIELD_NAMES.values()].add_suffix("_1"),
-            how="left",
-            left_on=f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
-            right_on=f"{RELATION_ENTRIES_FIELD_NAMES['idLu']}_1"
-        ).merge(
-            self.entries[RELATION_ENTRIES_FIELD_NAMES.values()].add_suffix("_2"),
-            how="left",
-            left_on=f"{CANDIDATE_FIELD_NAMES['id_lu']}_2",
-            right_on=f"{RELATION_ENTRIES_FIELD_NAMES['idLu']}_2"
-        )[[
-            f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
-            f"{RELATION_ENTRIES_FIELD_NAMES['word']}_1",
-            f"{RELATION_ENTRIES_FIELD_NAMES['pos']}_1",
-            f"{RELATION_ENTRIES_FIELD_NAMES['fnDefinition']}_1",
-            RELATION_NAME,
-            f"{CANDIDATE_FIELD_NAMES['id_lu']}_2",
-            f"{RELATION_ENTRIES_FIELD_NAMES['word']}_2",
-            f"{RELATION_ENTRIES_FIELD_NAMES['pos']}_2",
-            f"{RELATION_ENTRIES_FIELD_NAMES['fnDefinition']}_2"
-        ]].drop_duplicates()
+        self.lu_relations = (
+            self.lu_relations.merge(
+                self.entries[RELATION_ENTRIES_FIELD_NAMES.values()].add_suffix("_1"),
+                how="left",
+                left_on=f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
+                right_on=f"{RELATION_ENTRIES_FIELD_NAMES['idLu']}_1",
+            )
+            .merge(
+                self.entries[RELATION_ENTRIES_FIELD_NAMES.values()].add_suffix("_2"),
+                how="left",
+                left_on=f"{CANDIDATE_FIELD_NAMES['id_lu']}_2",
+                right_on=f"{RELATION_ENTRIES_FIELD_NAMES['idLu']}_2",
+            )[
+                [
+                    f"{CANDIDATE_FIELD_NAMES['id_lu']}_1",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['word']}_1",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['pos']}_1",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['fnDefinition']}_1",
+                    RELATION_NAME,
+                    f"{CANDIDATE_FIELD_NAMES['id_lu']}_2",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['word']}_2",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['pos']}_2",
+                    f"{RELATION_ENTRIES_FIELD_NAMES['fnDefinition']}_2",
+                ]
+            ]
+            .drop_duplicates()
+        )
 
     def drop_relations(self):
         if self.lu_relations is not None:
-            self.lu_relations = self.lu_relations.loc[~self.lu_relations[RELATION_NAME].isin(self.RELATIONS_TO_DROP)]
+            self.lu_relations = self.lu_relations.loc[
+                ~self.lu_relations[RELATION_NAME].isin(self.RELATIONS_TO_DROP)
+            ]
 
     def write_to_file(self):
         if self.lu_relations is not None:
@@ -189,4 +221,3 @@ class RelationGenerator:
         self.add_relations_info()
         self.drop_relations()
         self.write_to_file()
-

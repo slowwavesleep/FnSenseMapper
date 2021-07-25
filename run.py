@@ -7,8 +7,16 @@ from relation_generator import RelationGenerator
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Run FN sense mapping with specified settings')
-    parser.add_argument(dest="config", nargs="?", type=str, help="Path to config file", default="config.yml")
+    parser = argparse.ArgumentParser(
+        description="Run FN sense mapping with specified settings"
+    )
+    parser.add_argument(
+        dest="config",
+        nargs="?",
+        type=str,
+        help="Path to config file",
+        default="config.yml",
+    )
     args = parser.parse_args()
 
     with open(args.config) as file:
@@ -29,24 +37,24 @@ if __name__ == "__main__":
     n_candidates = config.get("n_candidates", 1)
 
     if do_ranking:
-        ranker = CandidateRanker(data_path=data_path,
-                                 out_path=ranker_out_path,
-                                 no_header=no_header,
-                                 model_name=embedder_model,
-                                 n_candidates=n_candidates,
-                                 substring_condition=substring_condition,
-                                 cutoff_similarity=cutoff_similarity)
+        ranker = CandidateRanker(
+            data_path=data_path,
+            out_path=ranker_out_path,
+            no_header=no_header,
+            model_name=embedder_model,
+            n_candidates=n_candidates,
+            substring_condition=substring_condition,
+            cutoff_similarity=cutoff_similarity,
+        )
 
         ranker.write_candidates()
 
-    relations_gen = RelationGenerator(edges_path=edges_path,
-                                      candidates_path=ranker_out_path,
-                                      entries_path=data_path,
-                                      no_header=no_header,
-                                      out_path=relations_out_path)
+    relations_gen = RelationGenerator(
+        edges_path=edges_path,
+        candidates_path=ranker_out_path,
+        entries_path=data_path,
+        no_header=no_header,
+        out_path=relations_out_path,
+    )
 
     relations_gen.process_data()
-
-
-
-

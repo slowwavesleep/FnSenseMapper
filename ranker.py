@@ -14,16 +14,16 @@ from constants import DATA_COLUMNS, CANDIDATE_FIELD_NAMES
 
 
 class CandidateRanker:
-
-    def __init__(self,
-                 data_path: str,
-                 out_path: str,
-                 no_header: bool,
-                 model_name: str,
-                 n_candidates: int,
-                 substring_condition: bool = True,
-                 cutoff_similarity: Optional[float] = None,
-                 ):
+    def __init__(
+        self,
+        data_path: str,
+        out_path: str,
+        no_header: bool,
+        model_name: str,
+        n_candidates: int,
+        substring_condition: bool = True,
+        cutoff_similarity: Optional[float] = None,
+    ):
 
         self.data_path = data_path
         self.out_path = out_path
@@ -49,7 +49,7 @@ class CandidateRanker:
 
     @staticmethod
     def argsort_with_cutoff(x: np.ndarray, threshold: Union[int, float]) -> np.ndarray:
-        idx, = np.where(x > threshold)
+        (idx,) = np.where(x > threshold)
         return idx[np.argsort(x[idx])][::-1]
 
     def init_data(self):
@@ -71,7 +71,9 @@ class CandidateRanker:
         for lu_id in self.lu_ids:
             yield self.data.loc[self.data.idLu == lu_id]
 
-    def process_subset(self, df_subset: pd.DataFrame) -> Dict[str, Union[int, str, List[float], List[str]]]:
+    def process_subset(
+        self, df_subset: pd.DataFrame
+    ) -> Dict[str, Union[int, str, List[float], List[str]]]:
         id_lu: int = df_subset.iloc[0].idLu
         fn_word: str = df_subset.iloc[0].word
         fn_pos: str = df_subset.iloc[0].pos
@@ -82,16 +84,25 @@ class CandidateRanker:
 
         n_candidates: int = max(min(len(bn_definitions), self.n_candidates), 1)
 
-        encoded_fn_definition: np.ndarray = np.expand_dims(self.sentence_embedder.encode(fn_definition), axis=0)
-        encoded_bn_definitions: np.ndarray = self.sentence_embedder.encode(bn_definitions)
-        similarities: np.ndarray = cosine_similarity(encoded_fn_definition, encoded_bn_definitions).squeeze(0)
+        encoded_fn_definition: np.ndarray = np.expand_dims(
+            self.sentence_embedder.encode(fn_definition), axis=0
+        )
+        encoded_bn_definitions: np.ndarray = self.sentence_embedder.encode(
+            bn_definitions
+        )
+        similarities: np.ndarray = cosine_similarity(
+            encoded_fn_definition, encoded_bn_definitions
+        ).squeeze(0)
 
         # remove entries below threshold if minimal similarity is specified
         if self.cutoff_similarity is not None and 0 < self.cutoff_similarity < 1:
-            candidate_indices: np.ndarray = self.argsort_with_cutoff(x=similarities,
-                                                                     threshold=self.cutoff_similarity)[:n_candidates]
+            candidate_indices: np.ndarray = self.argsort_with_cutoff(
+                x=similarities, threshold=self.cutoff_similarity
+            )[:n_candidates]
         else:
-            candidate_indices: np.ndarray = np.argsort(similarities)[::-1][:n_candidates]
+            candidate_indices: np.ndarray = np.argsort(similarities)[::-1][
+                :n_candidates
+            ]
 
         scores: np.ndarray = similarities[candidate_indices]
         mapped_definitions: np.ndarray = bn_definitions[candidate_indices]
@@ -99,24 +110,32 @@ class CandidateRanker:
         mapped_names: np.ndarray = bn_names[candidate_indices]
 
         if mapped_names.size != 0 and self.substring_condition:
-            substring_indices = [True if fuzz.partial_ratio(fn_word.lower(), self.clean_entry(name.lower())) > 90
-                                 else False
-                                 for name in mapped_names]
+            substring_indices = [
+                True
+                if fuzz.partial_ratio(fn_word.lower(), self.clean_entry(name.lower()))
+                > 90
+                else False
+                for name in mapped_names
+            ]
             scores = scores[substring_indices]
             mapped_definitions = mapped_definitions[substring_indices]
             mapped_ids = mapped_ids[substring_indices]
             mapped_names = mapped_names[substring_indices]
 
-        return {CANDIDATE_FIELD_NAMES["bn_ids"]: list(mapped_ids),
-                CANDIDATE_FIELD_NAMES["bn_names"]: list(mapped_names),
-                CANDIDATE_FIELD_NAMES["bn_definitions"]: list(mapped_definitions),
-                CANDIDATE_FIELD_NAMES["scores"]: [float(score) for score in scores],
-                CANDIDATE_FIELD_NAMES["id_lu"]: int(id_lu),
-                CANDIDATE_FIELD_NAMES["fn_word"]: fn_word,
-                CANDIDATE_FIELD_NAMES["fn_definition"]: fn_definition,
-                CANDIDATE_FIELD_NAMES["fn_pos"]: fn_pos}
+        return {
+            CANDIDATE_FIELD_NAMES["bn_ids"]: list(mapped_ids),
+            CANDIDATE_FIELD_NAMES["bn_names"]: list(mapped_names),
+            CANDIDATE_FIELD_NAMES["bn_definitions"]: list(mapped_definitions),
+            CANDIDATE_FIELD_NAMES["scores"]: [float(score) for score in scores],
+            CANDIDATE_FIELD_NAMES["id_lu"]: int(id_lu),
+            CANDIDATE_FIELD_NAMES["fn_word"]: fn_word,
+            CANDIDATE_FIELD_NAMES["fn_definition"]: fn_definition,
+            CANDIDATE_FIELD_NAMES["fn_pos"]: fn_pos,
+        }
 
     def write_candidates(self):
         with open(self.out_path, "w") as file:
             for subset in tqdm(self.subset_generator(), total=len(self.lu_ids)):
-                file.write(json.dumps(self.process_subset(subset), ensure_ascii=False) + "\n")
+                file.write(
+                    json.dumps(self.process_subset(subset), ensure_ascii=False) + "\n"
+                )
