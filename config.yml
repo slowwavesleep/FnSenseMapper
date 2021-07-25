@@ -1,0 +1,13 @@
+do_ranking: True
+no_header: True
+substring_condition: True
+
+embedder_model: "sentence-transformers/LaBSE"
+cutoff_similarity: 0.3
+n_candidates: 3
+
+paths:
+  data_path: "resources/bn_entries.csv"
+  ranker_out_path: "resources/candidates.jsonl"
+  relations_out_path: "resources/qualia_relations.csv"
+  edges_path: "resources/bn_edges.csv"
