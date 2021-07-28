@@ -201,7 +201,7 @@ class RelationGenerator:
 
     def write_to_file(self):
         if self.lu_relations is not None:
-            self.lu_relations.to_csv(self.out_path)
+            self.lu_relations.reset_index().drop("index", axis=1).reset_index().to_csv(self.out_path, index=False)
 
     @staticmethod
     def swap_col_names(df: pd.DataFrame, col_name_1: str, col_name_2: str):
