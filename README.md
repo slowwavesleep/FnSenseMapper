@@ -1,11 +1,28 @@
 # FnSenseMapper
 A tool to map FrameNet Lexical Units to BabelNet synsets using the distance between sentence embeddings between corresponding definitions
 
-Assuming that `bn_entries.csv` and `bn_edges.csv` are in `resources` the mapper can be run using the following command:
 
+## Install and run
+Create a virtual environment and install dependencies:
+```
+conda env --n mapper python=3.7
+```
+```
+conda activate mapper
+```
+```
+cd FnSenseMapper
+```
+```
+pip install -r requirements.txt
+```
+
+Run the mapper:
 ```
 python run.py
 ```
+
+Note that `bn_edges.csv` in `resources` is truncated due to Github's file size restrictions.
 
 The following mapper parameters may be modified in `config.yml`:
 - Maximum number of candidates to keep
