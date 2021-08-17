@@ -22,7 +22,7 @@ Run the mapper:
 python run.py
 ```
 
-Note that `bn_edges.csv` in `resources` is truncated due to Github's file size restrictions.
+Note that the existing `bn_edges.csv` in `resources` is truncated due to Github's file size restrictions.
 
 The following mapper parameters may be modified in `config.yml`:
 - Maximum number of candidates to keep
