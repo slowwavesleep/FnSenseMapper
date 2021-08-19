@@ -27,4 +27,4 @@ Note that the existing `bn_edges.csv` in `resources` is truncated due to Github'
 The following mapper parameters may be modified in `config.yml`:
 - Maximum number of candidates to keep
 - Cosine similarity cutoff threshold
-- Whether to discard candidates where LU lemma is not a substring of BN entry name
+- Whether to discard candidates where LU lemma is not a (partial )substring of BN entry name
