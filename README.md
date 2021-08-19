@@ -5,7 +5,7 @@ A tool to map FrameNet Lexical Units to BabelNet synsets using the distance betw
 ## Install and run
 Create a virtual environment and install dependencies:
 ```
-conda env --n mapper python=3.7
+conda env -n mapper python=3.7
 ```
 ```
 conda activate mapper
